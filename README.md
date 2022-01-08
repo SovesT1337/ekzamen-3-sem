@@ -12,6 +12,44 @@
 ## 11) Современный С++: std::optional, std::variant, std::any, std::string_view. Примеры использования
 ## 12) Лямбда-функции, функторы, указатели на функции, std::functional. Примеры использования std::functional. Примеры использования лямбда-функций.
 ## 13) R-value ссылки. Семантика перемещения. std::move, std::forward. Пример.
+  
+  Rvalue ссылки - техническое расширение языка C++. Они позволяют компилятору определить, когда необходимо использовать перемещение, вместо копирования. 
+  
+  Семантика перемещения позволяет компиляторам заменять дорогостоящие операции копирования "дешевыми" операциями перемещения. Семантика также позволяет создавать типы, которые концептуальлно поддерживают только опферации перемещения. 
+  
+  std::move безусловно приводит аргумент фк ravalue ссылке.
+  
+  ```cpp
+    std::string str = "Salut";
+    std::vector<std::string> v;
+ 
+    v.push_back(str);
+    std::cout << "After copy, str is " << str << '\n';
+ 
+    v.push_back(std::move(str));
+    std::cout << "After move, str is " << str << '\n';
+ 
+    std::cout << "The contents of the vector are { " << std::quoted(v[0])
+                                             << ", " << std::quoted(v[1]) << " }\n";
+  ```
+  
+  Функция std::forward применяется при идеальной передаче (perfect forwarding). Идеальная передача позволяет создавать функции-обертки, передающие параметры без каких-либо изменений (lvalue передаются как lvalue, а rvalue – как rvalue).
+  
+  ```cpp
+  void push(T&& value) {
+    T* data = new T[length];
+    if (length) {
+      for (unsigned int i = 0; i < length; ++i) data[i] = forward<T>(ptr[i]);
+    }
+    delete[] ptr;
+    ++length;
+    ptr = new T[length];
+    for (unsigned int i = 0; i < length - 1; ++i) ptr[i] = forward<T>(data[i]);
+    delete[] data;
+    ptr[length - 1] = forward<T>(value);
+  }
+  ```
+  
 ## 14) Обработка ошибок с использованием механизма обработки исключений. RAII. Примеры классов, использующих RAII. Ключевое слово noexcept.
   
   Пример обработки ошибок с использованием механизма обработки исключений:
