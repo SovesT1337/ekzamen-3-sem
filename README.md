@@ -145,6 +145,57 @@ if( !tempParentSharedPtr ) {
 ## 27) Управление потоками. Состояния гонок в интерфейсе структур данных. Класс std::future, функция std::async
 ## 28) Атомарные операции. Классы std::atomic, std::atomic_flag. Примеры работы с std::atomic
 ## 29) Шаблоны проектирования: фабричный метод. Пример реализации «простой фабрики» и «фабричного метода».
+  
+  Шаблон проектирования - повторяющаяся архитектурная конструкция, представляющая собой решение проблемы проектирования в рамках некоторого часто возникающего контекста.
+  
+  Паттерн "Простая фабрика" - это класс, в котором есть один метод с большим условным оператором, выбирающим создаваемый продукт.
+  
+  ```cpp
+  struct Barrack {
+  Unit* CreateUnit(UnitID unit_id) {
+ 
+    switch (unit_id) {
+      case UnitID::Knight:
+        return new Knight();
+      case UnitID::Archer:
+        return new Archer();
+      default:
+        return nullptr;
+    }
+  }
+};
+  ```
+  
+  Паттерн "Фабричный метод" - это устройство классов, при котором подклассы могут переопределять тип создаваемого в суперклассе продукта.
+  
+  ```cpp
+  struct Barrack {
+  virtual Unit* CreateUnit() = 0;
+ 
+  void Hire(Player& player) {
+    auto* unit = CreateUnit();
+    player.AddToArmy(unit);
+  }
+  
+  struct KnightBarrack : public Barrack {
+  Unit* CreateUnit() override {
+    return new Knight();
+  }
+};
+struct ArcherBarrack : public Barrack {
+  Unit* CreateUnit() override {
+    return new Archer();
+  }
+};
+ 
+ArcherBarrack archer_barrack;
+archer_barrack.Hire(player);
+KnightBarrack knight_barrack;
+knight_barrack.Hire(player);
+};
+  
+  ```
+  
 ## 30) Шаблоны проектирования: observer. Пример реализации «обозреватель».
 ## 31) Шаблоны проектирования: синглтон. Пример реализации Синглтона.
 ## 32) Асинхронное программирование. Плюсы и минусы. Сопрограммы. Функции обратного вызова.
