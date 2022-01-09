@@ -702,7 +702,105 @@ public:
     ```
     
 ## 11) Современный С++: std::optional, std::variant, std::any, std::string_view. Примеры использования
+	
+	### optional
+	
+	Класс, который хранит определнное значение и сообщает о том, инициализированно оно или нет. Классическое использование - в функции, которая может и не вернуть значение.
+	
+	```cpp
+	std::optional<std::string> create(bool b) {
+	    if (b) return "Godzilla";
+	    return {};
+	}
+
+	int main()
+	{
+		std::cout << "create(false) returned " << create(false).value_or("empty") << '\n';
+	}
+	```
+
+### variant
+
+Шаблон класса, который в качестве шаблонных параметров принимает типы, которые он может содержать. Далее используя функцию std::visit можно узнать хранимый тип
+
+```C++
+variant<string, int, bool> mySetting = string("Hello!"); // или
+mySetting = 42; // или
+mySetting = false;
+```
+### any
+
+Тут хранится что угодно, что потом можно достать
+
+```C++
+std::any a = 1;
+    std::cout << a.type().name() << ": " << std::any_cast<int>(a) << '\n';
+
+a = 1;
+int* i = std::any_cast<int>(&a);
+std::cout << *i << "\n";    
+```
+
+### string_view
+
+Позволяет лишить права владения определенной строкой, оставив право просмотра
+
+```C++
+void get_vendor_from_id(std::string_view id) { // не аллоцирует память, работает с `const char*`, `char*`, `const std::string&` и т.д.
+    std::cout <<
+        id.substr(0, id.find_last_of(':')); // не аллоцирует память для подстрок
+}
+```
+
+	
 ## 12) Лямбда-функции, функторы, указатели на функции, std::functional. Примеры использования std::functional. Примеры использования лямбда-функций.
+	
+	Лямбда-функция является удобным способом определения объекта анонимной функции прямо в расположении, где оно вызывается или передается в качестве аргумента функции. 
+
+	Функтор - функциональный объект. Для определения функтора достаточно описать класс, в котором переопределен оператор (). Особо широкое применение функторы приобрели в алгоритмах STL, рассмотренных ранее, когда они передаются в вызов в качестве параметра, вместо функции, определяющей действие или предикат алгоритма.
+	
+	В языке программирования C функция тоже имеет адрес и может иметь указатель. Указатель на функцию представляет собой выражение или переменную, которые используются для представления адреса функции. Указатель на функцию содержит адрес первого байта в памяти, по которому располагается выполняемый код функции.
+
+	Объекты класса std::function могут хранить, копировать и вызывать произвольные вызываемые объекты — функции, лямбда-выражения, выражения связывания и другие функциональные объекты.
+	
+	```cpp
+	int half(int x) {return x/2;}
+
+	struct third_t {
+	  int operator()(int x) {return x/3;}
+	};
+	
+	struct MyValue {
+	  int value;
+	  int fifth() {return value/5;}
+	};
+
+	int main () {
+	  std::function<int(int)> fn1 = half;                    // function
+	  std::function<int(int)> fn2 = &half;                   // function pointer
+	  std::function<int(int)> fn3 = third_t();               // function object
+	  std::function<int(int)> fn4 = [](int x){return x/4;};  // lambda expression
+	  std::function<int(int)> fn5 = std::negate<int>();      // standard function object
+
+	  std::cout << "fn1(60): " << fn1(60) << '\n';
+	  std::cout << "fn2(60): " << fn2(60) << '\n';
+	  std::cout << "fn3(60): " << fn3(60) << '\n';
+	  std::cout << "fn4(60): " << fn4(60) << '\n';
+	  std::cout << "fn5(60): " << fn5(60) << '\n';
+
+	  // stuff with members:
+	  std::function<int(MyValue&)> value = &MyValue::value;  // pointer to data member
+	  std::function<int(MyValue&)> fifth = &MyValue::fifth;  // pointer to member function
+
+	  MyValue sixty {60};
+
+	  std::cout << "value(sixty): " << value(sixty) << '\n';
+	  std::cout << "fifth(sixty): " << fifth(sixty) << '\n';
+
+	  return 0;
+	}
+	```
+	
 ## 13) R-value ссылки. Семантика перемещения. std::move, std::forward. Пример.
   
   Rvalue ссылки - техническое расширение языка C++. Они позволяют компилятору определить, когда необходимо использовать перемещение, вместо копирования. 
