@@ -1317,7 +1317,32 @@ void Consumer() {
 	
 ## 27) Управление потоками. Состояния гонок в интерфейсе структур данных. Класс std::future, функция std::async
 	
-	
+	std::async  позволяет выполнить функцию асинхронно и вернуть результат как std::future, стоит отметить, что функция может быть выполнена и синхронно.
+
+Шаблонный класс std::future обеспечивает механизм доступа к результатам асинхронных операций:
+
+- Асинхронные операции (созданные с помощью std::async, std::packaged_task, или std::promise) могут вернуть объект типа std::future создателю этой операции.
+- Создатель асинхронной операции может использовать различные методы запроса, ожидания или получения значения из std::future. Этим методы могут заблокировать выполнение до получения результата асинхронной операции.
+- Когда асинхронная операция готова к отправке результата её создателю, она может сделать это, изменив shared state (например, std::promise::set_value), которое связано с std::future создателя.
+
+Пример:
+```C++
+   // future from an async()
+   std::future<int> f2 = std::async(std::launch::async, [](){ return 8; });
+
+   // future from a promise
+   std::promise<int> p;
+   std::future<int> f3 = p.get_future();
+   std::thread( [](std::promise<int>& p){ p.set_value(9); },
+                std::ref(p) ).detach();
+ dwd
+   std::cout << "Waiting...";
+   f1.wait();
+   f2.wait();
+   f3.wait();
+   std::cout << "Done!\nResults are: "
+             << f1.get() << ' ' << f2.get() << ' ' << f3.get() << '\n';
+```
 	
 ## 28) Атомарные операции. Классы std::atomic, std::atomic_flag. Примеры работы с std::atomic
 	
@@ -1500,6 +1525,219 @@ Singleton* Singleton::instance = nullptr;
   ```
   
 ## 32) Асинхронное программирование. Плюсы и минусы. Сопрограммы. Функции обратного вызова.
+	
+	---
+Функция std::async  позволяет  запустить  асинхронную  зада-чу,  результат  которой  прямо  сейчас  не  нужен.  Но  вместо  объекта  std::thread  она  возвращает  объект  std::future  ,  который  будет  содержать возвращенное значение, когда оно станет доступно. Когда программе понадобится значение, она вызовет функцию-член get()объекта-будущего, и тогда поток будет приостановлен до готовности будущего  результата,  после  чего  вернет  значение. 
+
+```cpp
+#include <future>
+#include <iostream>
+int find_the_answer_to_ltuae();
+void do_other_stuff();
+
+int main() {
+std::future<int> the_answer = std::async(find_the_answer_to_ltuae); 
+do_other_stuff();
+std::cout << ”Ответ равен “ << the_answer.get() <<std::endl;
+}
+
+```
+
+Шаблон std::async  позволяет  передать  функции  дополнительные  параметры,  точно  так  же,  как  std::thread.  Если  первым  аргументом  является  указатель  на  функцию-член,  то  второй  аргумент  должен  содержать  объект,  от  имени  которого  эта  функция-член  вы-зывается
+
+```cpp
+struct X {
+  void foo(int,std::string const&);
+  std::string bar(std::string const&);
+};
+
+X x;
+auto f1=std::async(&X::foo,&x,42,”hello”);  // Вызывается p->foo(42,"hello"), где p=&x
+auto f2 = std::async(&X::bar,x,”goodbye”); // Вызывается tmpx.bar("goodbye"), где tmpx – копия x
+
+```
+
+Также можно  задать  требуемый  режим исполнения в  дополнительном  параметре  std::async  перед  вызываемой  функцией.  Этот  параметр  имеет  тип  std::launch  и  может  принимать  сле-дующие значения: std::launch::deferred – отложить вызов функции до того момента, когда будет вызвана функция-член wait() или get() объекта-будущего; std::launch::async – запускать функцию в    отдельном    потоке;    std::launch::deferred | std::launch::async – оставить решение на усмотрение реализации.
+
+Плюсы и минусы асинхронного подхода:
+  1) Безусловный плюс — это производительность. Причем она не просто в разы выше, она выше на порядки!
+  2) Минус — сложный и запутанный код, который к тому же еще и сложно отлаживать.
+
+Сопрограммы
+Сопрограммы (корутины, coroutine) - это потоки исполнения кода, которые организуются поверх аппаратных (системных) потоков.
+Поток исполнения кода - это последовательность операций, которые выполняются друг за другом. В нужные моменты эта последовательность может быть приостановлена, и вместо нее может начать выполняться часть другой последовательности операций. 
+
+В отличие от системных потоков, которые переключаются системой в произвольные моменты времени (вытесняющая многозадачность), сопрограммы переключаются вручную, в местах, указанных программистом (кооперативная многозадачность). 
+
+Обозначим операции над сопрограммой следующим образом:
+```cpp
+handle = spawn(СП); - запуск сопрограммы,
+yield; - приостановка текущей сопрограммы,
+resume(handle); - возобновление сопрограммы.
+```
+
+Возьмем две сопрограммы:
+```cpp
+// СП1      |  // СП2
+{           |  {
+  f1();     |     g1();
+  f2();     |     yield;
+  yield;    |     g2();
+  f3();     |     g3();
+  f4();     |     yield;
+  yield;    |     g4();
+  f5();     |     g5();
+}           |  }
+
+```
+Тогда, если на одном системном потоке запустить СП1, а затем СП2, то системный поток выполнит операции в следующем детерминированном порядке:
+
+```cpp
+// Системный поток  |  Выполняемый код
+c1 = spawn(СП1);    |  f1();
+                    |  f2();
+c2 = spawn(СП2);    |       g1();
+resume(c1);         |  f3();
+                    |  f4(); 
+resume(c2);         |       g2();
+                    |       g3();
+resume(c1);         |  f5();
+resume(c2);         |       g4();
+                    |       g5();
+
+```
+
+Функции обратного вызова
+
+Функция обратного вызова в программировании — передача исполняемого кода в качестве одного из параметров другого кода. Обратный вызов позволяет в функции исполнять код, который задаётся в аргументах при её вызове.
+
+```cpp
+/* The calling function takes a single callback as a parameter. */
+void PrintTwoNumbers(int (*numberSource)(void)) {
+    int val1 = numberSource();
+    int val2 = numberSource();
+    printf("%d and %d\n", val1, val2);
+}
+
+/* A possible callback */
+int overNineThousand(void) {
+    return (rand()%1000) + 9001;
+}
+
+/* Another possible callback. */
+int meaningOfLife(void) {
+    return 42;
+}
+
+/* Here we call PrintTwoNumbers() with three different callbacks. */
+int main(void) {
+    PrintTwoNumbers(&rand);
+    PrintTwoNumbers(&overNineThousand);
+    PrintTwoNumbers(&meaningOfLife);
+    return 0;
+}
+
+```
+	
 ## 33) Атомарные операции. Классы std::atomic. Структуры данных без блокировок. Реализация lock-free stack
   
-  
+  ---
+Операция в общей области памяти называется атомарной, если она завершается в один шаг относительно других потоков, имеющих доступ к этой памяти. Во время выполнения такой операции над переменной, ни один поток не может наблюдать изменение наполовину завершенным. Атомарная загрузка гарантирует, что переменная будет загружена целиком в один момент времени. Неатомарные операции не дают такой гарантии.
+
+Каждая специализация шаблона ```std::atomic``` определяет атомарный тип. Только объекты атомарных С++ типов могут безопасно использоваться в нескольких потоках одновременно. Когда один поток сохраняет данные в объекте атомарного типа, а другой хочет их прочитать, поведение программы определено стандартом.
+
+```cpp
+Typedef имя		Full specialization 
+std::atomic_char 	std::atomic<char>
+std::atomic_schar 	std::atomic<signed char>
+std::atomic_uchar 	std::atomic<unsigned char>
+std::atomic_short 	std::atomic<short>
+std::atomic_ushort 	std::atomic<unsigned short>
+std::atomic_int 	std::atomic<int>
+std::atomic_uint 	std::atomic<unsigned int>
+std::atomic_long 	std::atomic<long>
+```
+
+Структуры данных и алгоритмы, в которые блокирующие библиотечные  функции  не  используются,  называются  неблокирующими. Чтобы  структура  данных  считалась  свободной  от  блокировок,  она  должна быть открыта для одновременного доступа со стороны сразу нескольких  потоков.
+
+```cpp
+template<typename T>class lock_free_stack {
+private:
+    struct node;
+    struct counted_node_ptr {
+        int external_count;
+        node*  ptr;
+    };
+
+    struct node {
+        std::shared_ptr<T> data;
+        std::atomic<int> internal_count;
+        counted_node_ptr next;
+        explicit node(T const& data_): data(std::make_shared<T>(data_)), internal_count(0) {}
+    };
+
+    std::atomic<counted_node_ptr> head;
+
+    void increase_head_count(counted_node_ptr& old_counter) {
+        counted_node_ptr new_counter;
+        do {
+            new_counter = old_counter;
+            ++new_counter.external_count;
+        } while(!head.compare_exchange_strong(old_counter, new_counter, std::memory_order_acquire, std::memory_order_relaxed));
+        old_counter.external_count = new_counter.external_count;
+    }
+
+public:
+    ~lock_free_stack() {
+        while(pop());
+    }
+
+    void push(T const& data)  {
+        counted_node_ptr new_node;
+        new_node.ptr = new node(data);
+        new_node.external_count = 1;
+        new_node.ptr->next = head.load(std::memory_order_relaxed);
+        while(!head.compare_exchange_weak(new_node.ptr->next, new_node, std::memory_order_release, std::memory_order_relaxed));
+    }
+
+    std::shared_ptr<T> pop() {
+        // Загружаем атомарно значение головы стека
+        counted_node_ptr old_head = head.load(std::memory_order_relaxed);
+        for(;;) {
+            // Увеличиваем счетчик внешних ссылок на head
+            // Устанавливаются  все  поля структуры, чтобы быть уверенным, что другой поток не изменил в промежутке указатель.
+            increase_head_count(old_head);
+            node* const ptr = old_head.ptr;
+
+            // Проверка на пустой стек
+            if(!ptr) {
+                return std::shared_ptr<T>();
+            }
+
+            // Мы можем попытаться исключить узел из списка, выполнив compare_exchange_strong() с головным узлом head
+            if(head.compare_exchange_strong(old_head, ptr->next, std::memory_order_relaxed)) {
+                std::shared_ptr<T> res;
+                // Если compare_exchange_strong()  возвращает  true,  то  мы  при-няли  на  себя  владение  узлом
+                // И  можем  с  помощью  функции  swap() вытащить  из  него  данные,  которые  впоследствии  вернем
+                res.swap(ptr->data);
+                // мы исключили узел из списка, вследствие чего значение счетчика уменьшилось на 1
+                // и больше не обращаемся к узлу из данного потока, что дает уменьше-ние еще на 1
+                int const count_increase = old_head.external_count - 2;
+                // Затем можно прибавить внешний счетчик к внутреннему с помощью атомарной операции fetch_add
+                // fetch_add возвращает значение атомарной переменной до вызова
+                // Если теперь счетчик ссылок стал равен нулю, то предыдущее значение
+                // (то, которое возвращает fetch_add) было противоположно только что прибавленному, и тогда узел можно удалять.
+                if(ptr->internal_count.fetch_add(count_increase, std::memory_order_release) == -count_increase) {
+                    delete ptr;
+                }
+                return res;
+                // Если сравнение не прошло, значит head модифицировали => начинаем заново
+            } else if(ptr->internal_count.fetch_add(-1, std::memory_order_relaxed) == 1) {
+                ptr->internal_count.load(std::memory_order_acquire);
+                delete ptr;
+            }
+        }
+    }
+};
+
+```
