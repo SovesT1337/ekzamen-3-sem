@@ -924,8 +924,151 @@ if( !tempParentSharedPtr ) {
 ```
   
 ## 18) Сетевое взаимодействие. Berkley sockets. Основные функции для работы с сокетами
+	
+	Взаимодействие в сети рассматривается на основе понятия сокетов, которые позволяют приложениям рассматривать сетевые подключения как файлы, и программа может читать из сокета или писать в сокет, как она делает это с файлом. Существуют два механизма, предназначенных для сетевого взаимодействия программ, - это сокеты датаграмм, которые используют
+пользовательский датаграммный протокол (User Datagram Protocol)
+(UDP) без установления соединения, и сокеты, используюющие Протокол управления передачей / Межсетевой протокол (Transmission Control Protocol/Internet Protocol) (TCP/IP), устанавливающий соединение.
+
+Для работы с сетью традиционно используются сокеты.
+Сокет – это абстракция, которая позволяет работать с сетевыми ресурсами, как с файлами. Мы можем писать и читать данные из сокета почти так же, как из обычного файла.
+
+Функция socket - создает новый сокет с заданными параметрами.
+```cpp
+int socket(int domain, int type, int protocol);
+ 
+int sock_udp = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+int sock_tcp = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+```
+
+Функция bind - связывает сокет с конкретным адресом сетевого интерфейса.
+```cpp
+int bind(int sockfd,
+         const struct sockaddr *addr,
+         socklen_t addrlen);
+```
+Где `sockaddr` - семейство структур, описывающих адреса (`sockaddr_in` - для сетевого взаимодействияб `sockaddr_un` для межпроцессорного):
+Структура `sockaddr_in`:
+```cpp
+struct sockaddr_in {
+    short            sin_family;   // e.g. AF_INET
+    unsigned short   sin_port;     // e.g. htons(3490)
+    struct in_addr   sin_addr;     // see struct in_addr, below
+    char             sin_zero[8];  // zero this if you want to
+};
+
+struct in_addr {
+    unsigned long s_addr;  // load with inet_aton()
+};
+```
+
+Функция listen - переводит сокет в пассивный режим.
+```cpp
+int listen(int sockfd, int backlog);
+```
+Функция listen принимает дескриптор слушающего сокета и размер очереди запросов. Когда клиент пытается соединиться с сервером, его запрос ставится в очередь, так как сервер может быть занят обработкой других запросов. Если очередь заполнена, все последующие запросы будут игнорироваться.
+
+Функция accept ожидает клиентские соединения.
+```cpp
+int accept(int sockfd,
+           struct sockaddr *addr,
+           socklen_t *addrlen);
+
+```
+В качестве аргумента функции передается дескриптор слушающего сокета.
+При успешной установке соединения, для него создается новый сокет. Функция accept возвращает дескриптор этого сокета.
+Если произошла ошибка соединения, то возвращается значение INVALID_SOCKET.
+
+В структуру, на которую ссылается addr, записывается адрес сокета клиента, который установил соединение с сервером.
+В переменную, адресуемую указателем addrlen, записывается размер структуры.
+	
 ## 19) Сетевое взаимодействие. Сокеты. Библиотека boost asio.
+	
+	Взаимодействие в сети рассматривается на основе понятия сокетов, которые позволяют приложениям рассматривать сетевые подключения как файлы, и программа может читать из сокета или писать в сокет, как она делает это с файлом. Существуют два механизма, предназначенных для сетевого взаи-
+модействия программ, - это сокеты датаграмм, которые используют
+пользовательский датаграммный протокол (User Datagram Protocol)
+(UDP) без установления соединения, и сокеты, используюющие Протокол управления передачей / Межсетевой протокол (Transmission Control Protocol/Internet Protocol) (TCP/IP), устанавливающий соединение.
+
+Boost.Asio - кросс-платформенная С++ библиотека для программирования сетевых приложений и других низкоуровневых программ ввода/вывода.
+
+Example:
+```cpp
+// Initialization
+boost::system::error_code error;
+
+boost::asio::io_service ioService{};
+boost::asio::ip::tcp::socket socket{ioService, error};
+
+...
+...
+
+// Binding to port
+boost::asio::ip::tcp::endpoint endPoint{boost::asio::ip::v_4(), port};
+
+socket.bind(endPoint, error);
+
+...
+...
+
+// Connecting to server
+socket.connect(someEndPoint, error);
+
+...
+...
+
+// Read-write
+std::string request;
+request.resize(SOCKET_INPUT_BUFFER_SIZE);
+
+socket.read_some(boost::asio::buffer(request), error);
+if (error) {
+  BOOST_LOG_TRIVIAL(error) << "Error while reading from socket : " << error;
+  return error;
+}
+
+std::string response = HandleRequest(request, error);
+if (error) {
+  BOOST_LOG_TRIVIAL(error) << "Error while handling request : " << error;
+  return error;
+}
+
+socket.write_some(boost::asio::buffer(response), error);
+if (error) {
+  BOOST_LOG_TRIVIAL(error) << "Error while writing to socket : " << error;
+  return error;
+}
+```
+	
 ## 20) Управление потоками. Состояния гонок в интерфейсе структур данных. Класс std::future, функция std::async.
+	
+	Состояние гонок - ошибка проектирования многпоточной системы, когда работа приложения зависит от того, в каком порядке выполняются части кода. Состояние гонки возникает, кода несколько поток пытаются получить доступ к данным, причем хотя бы один поток уже выполняет запись. Для предотвращения данной ошибки применяются приемы синхронизации структур данных.
+
+std::async позволяет выполнить функцию асинхронно и вернуть результат как std::future, стоит отметить, что функция может быть выполнена и синхронно.
+
+Шаблонный класс std::future обеспечивает механизм доступа к результатам асинхронных операций:
+
+Асинхронные операции (созданные с помощью std::async, std::packaged_task, или std::promise) могут вернуть объект типа std::future создателю этой операции.
+Создатель асинхронной операции может использовать различные методы запроса, ожидания или получения значения из std::future. Этим методы могут заблокировать выполнение до получения результата асинхронной операции.
+Когда асинхронная операция готова к отправке результата её создателю, она может сделать это, изменив shared state (например, std::promise::set_value), которое связано с std::future создателя.
+Пример:
+
+	```cpp
+   // future from an async()
+   std::future<int> f2 = std::async(std::launch::async, [](){ return 8; });
+
+   // future from a promise
+   std::promise<int> p;
+   std::future<int> f3 = p.get_future();
+   std::thread( [](std::promise<int>& p){ p.set_value(9); },
+                std::ref(p) ).detach();
+ dwd
+   std::cout << "Waiting...";
+   f1.wait();
+   f2.wait();
+   f3.wait();
+   std::cout << "Done!\nResults are: "
+             << f1.get() << ' ' << f2.get() << ' ' << f3.get() << '\n';
+	```
+	
 ## 21) Переключение контекста потоков. Класс std::thread. Ключевое слово thread_local. Примеры использования thread_local.
   
   Контекст потоков:
@@ -937,6 +1080,49 @@ if( !tempParentSharedPtr ) {
 Создание объекта типа std::thread запускает новый поток.
   
 До вызова деструктора объекта типа std::thread необходимо вызвать или метод join(), или метод detach(). Иначе, во время вызова деструктора произойдет вызов std::terminate().
+	
+	Флаг  типа  thread_local  –  основная  причина,  по  которой  мы  не  можем  использовать  для  управления  потоком  просто  класс  std::thread;  память  для  него  нужно  выделить  таким  образом,  чтобы  к  ней имел доступ как экземпляр interruptible_thread, так и вновь запущенный  поток.  Для  этого  функцию,  переданную  конструктору,  можно  специальным  образом  обернуть  перед  тем,  как  передавать  конструктору std::thread. Как это делается, показано в следующем листинге.
+
+```cpp
+class interrupt_flag{
+public:
+    void  set();
+    bool  is_set()  const;
+};
+thread_local interrupt_flag this_thread_interrupt_flag;
+    interruptible_thread{
+    std::thread  internal_thread;
+    interrupt_flag*  flag;
+public:
+    template<typename  FunctionType>    interruptible_thread(FunctionType  f)  {
+      std::promise<interrupt_flag*> p;
+      internal_thread=std::thread([f,&p]{
+         p.set_value(&this_thread_interrupt_flag);
+         f();
+      });
+      flag=p.get_future().get();
+       }
+      void  interrupt()  {
+        if(flag)   {
+          flag->set();
+      }
+  }
+};
+
+```
+	
+	Пример использования std::thread:
+```cpp
+void hello() {
+  std::cout << "Hello, World!";
+}
+ 
+int main() {
+  std::thread th(hello);
+  th.join();
+}
+
+```
   
 ## 22) Переключение контекста потоков. Класс std::thread. Ключевое слово thread_local. Примеры использования std::thread.
 ## 23) Синхронизация потоков. Состояние гонок. Классы std::mutex, std::lock_guard, std::unique_lock. Функция std::lock. Примеры использования мьютексов.
