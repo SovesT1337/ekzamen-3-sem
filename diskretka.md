@@ -8,12 +8,69 @@
 
 <img src="https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;A&space;=&space;B&space;\Leftrightarrow&space;&space;((A&space;\subseteq&space;B)&space;\wedge&space;(B&space;\subseteq&space;A))" title="\bg_white A = B \Leftrightarrow ((A \subseteq B) \wedge (B \subseteq A))" />
 
-2. Отображения множеств, характеристическая функция множества.
+Операции над множествами: 
+1. объединение
+2. пересечение
+3. разность
+4. симметричная разность
+5. дополнение
+
+![image](https://user-images.githubusercontent.com/71689243/149217757-bc40a7c0-3df1-41a3-b50b-cc4022dcc9dd.png)
+
+Свойства операций над множествами:
+
+1. Коммутативность
+
+![image](https://user-images.githubusercontent.com/71689243/149218701-3162f636-773a-412b-996e-87cface17e38.png)
+![image](https://user-images.githubusercontent.com/71689243/149218708-68b87186-dd62-446a-8055-cc2dc6eb8f29.png)
+
+2. Ассоциативность
+
+![image](https://user-images.githubusercontent.com/71689243/149218742-3fde884b-0184-414d-9ed9-9113bbf06d7d.png)
+![image](https://user-images.githubusercontent.com/71689243/149218751-0fc66313-4ebe-478f-a9bb-1c7d5303139a.png)
+
+3. Дистрибутивность
+
+![image](https://user-images.githubusercontent.com/71689243/149218766-609928b0-4c9c-4234-8767-b6b5937d35fc.png)
+![image](https://user-images.githubusercontent.com/71689243/149218777-d469765c-2869-4a85-b551-91420e7fb974.png)
+
+4. Индепотентность
+
+![image](https://user-images.githubusercontent.com/71689243/149218788-d6c6a438-5b2d-4a95-a103-99545c6723dc.png)
+![image](https://user-images.githubusercontent.com/71689243/149218800-eba87113-5daf-483d-8b62-bb85a8978289.png)
+
+5. Закон де Моргана
+
+![image](https://user-images.githubusercontent.com/71689243/149218811-4b2946db-8b97-4e30-8161-a1af73071db1.png)
+![image](https://user-images.githubusercontent.com/71689243/149218824-6279e248-2a97-4934-8984-8a9d5f7498da.png)
+
+6. Операции с множествами
+
+![image](https://user-images.githubusercontent.com/71689243/149218867-936c1f55-e479-443e-ba7a-9bda53046a22.png)
+![image](https://user-images.githubusercontent.com/71689243/149218872-afd96c53-0a10-4e86-984e-97b6d922306a.png)
+
+![image](https://user-images.githubusercontent.com/71689243/149218884-ec429c6d-91fd-43a0-9204-fa09a5f4622d.png)
+![image](https://user-images.githubusercontent.com/71689243/149218902-cfddd84c-9d2e-4168-acce-d2ce6a100803.png)
+
+7. Законы поглащения
+
+![image](https://user-images.githubusercontent.com/71689243/149218948-05a84eab-ddaa-46c9-a162-0d10303f4df6.png)
+![image](https://user-images.githubusercontent.com/71689243/149218963-270c5b3a-bff6-4e5a-9fa9-b31f44ca9a2e.png)
+
+8. Свойства операции разности
+
+![image](https://user-images.githubusercontent.com/71689243/149218979-ce115277-3775-45c4-949e-484cafeae5ca.png)
+![image](https://user-images.githubusercontent.com/71689243/149219002-925b6320-ffae-4bcf-83f1-e241386c8085.png)
+
+9. Свойства операции симметричной разности
+![image](https://user-images.githubusercontent.com/71689243/149219015-464a553f-a751-42a0-8ff3-646c40293673.png)
+
+## 2. Отображения множеств, характеристическая функция множества.
 Свойства характеристических функций (связь с элементарными операциями). Характеристическая функция симметрической разности.
-3. Понятие отображения множеств. Сюръективные, инъективные и биективные отображения. Композиция отображений. Ассоциативность
+## 3. Понятие отображения множеств. Сюръективные, инъективные и биективные отображения. Композиция отображений. Ассоциативность
 композиции. Обратное отображение. Теорема существования обратного отображения. Отображение, обратное к композиции отображений.
-4. Бинарные отношения: отношения эквивалентности, классы эквивалентности, теорема о разбиении на классы эквивалентности.
-5. Бинарные отношения: отношения порядка, наибольший (наименьший)
+## 4. Бинарные отношения: отношения эквивалентности, классы эквивалентности, теорема о разбиении на классы эквивалентности.
+## 5. Бинарные отношения: отношения порядка, наибольший (наименьший)
 элемент, его единственность. Максимальный (минимальный) элемент,
 инфимум и супремум.
 6. Равномощные множества. Счетные множества, их свойства. Пример
